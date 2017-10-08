@@ -53,19 +53,18 @@ Expression *exprFolding(Expression *exprnode) {
 	Expression *left = exprnode->leftOperand;
 	Expression *right = exprnode->rightOperand;
 	
-	if (left == NULL || right == NULL)
-		return exprnode;
-
-
-	if (left->v.type == IntToFloatConvertNode)
+	if (left != NULL && left->v.type == IntToFloatConvertNode)
 		left = left->leftOperand;
-	if (right->v.type == IntToFloatConvertNode)
+	if (right != NULL && right->v.type == IntToFloatConvertNode)
 		right = right->leftOperand;
 	
 	if (left != NULL)
 		left = exprFolding(left);
 	if (right != NULL)
 		right = exprFolding(right);
+	
+	if (left == NULL || right == NULL)
+		return exprnode;
 	
 	if(left->v.type == IntConst && right->v.type == IntConst) {
 		switch (exprnode->v.type) {
