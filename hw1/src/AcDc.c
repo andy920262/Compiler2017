@@ -339,6 +339,12 @@ Expression *parseValue( FILE *source )
 			exit(1);
 	}
 
+		return value;
+}
+
+Expression *parseMulDiv(FILE *source, Expression *value) {
+	if (value == NULL)
+		value = parseValue(source);
 	Token next_token = scanner(source);
 	Expression *expr;
 	int l;
@@ -359,16 +365,16 @@ Expression *parseValue( FILE *source )
 			(expr->v).val.op = Mul;
 			expr->leftOperand = value;
 			expr->rightOperand = parseValue(source);
-			return expr;
+			return parseMulDiv(source, expr);
 		case DivOp:
 			expr = (Expression *)malloc( sizeof(Expression) );
 			(expr->v).type = DivNode;
 			(expr->v).val.op = Div;
 			expr->leftOperand = value;
 			expr->rightOperand = parseValue(source);
-			return expr;
+			return parseMulDiv(source, expr);
 		default:
-			printf("Syntax Error: Expect Identifier or a Number %s\n", token.tok);
+			printf("Syntax Error: Expect Identifier or a Number %s\n", next_token.tok);
 			exit(1);
 	}
 	return value;
@@ -386,14 +392,14 @@ Expression *parseExpressionTail( FILE *source, Expression *lvalue )
 			(expr->v).type = PlusNode;
 			(expr->v).val.op = Plus;
 			expr->leftOperand = lvalue;
-			expr->rightOperand = parseValue(source);
+			expr->rightOperand = parseMulDiv(source, NULL);
 			return parseExpressionTail(source, expr);
 		case MinusOp:
 			expr = (Expression *)malloc( sizeof(Expression) );
 			(expr->v).type = MinusNode;
 			(expr->v).val.op = Minus;
 			expr->leftOperand = lvalue;
-			expr->rightOperand = parseValue(source);
+			expr->rightOperand = parseMulDiv(source, NULL);
 			return parseExpressionTail(source, expr);
 		case Alphabet:
 		case PrintOp:
@@ -421,14 +427,14 @@ Expression *parseExpression( FILE *source, Expression *lvalue )
 			(expr->v).type = PlusNode;
 			(expr->v).val.op = Plus;
 			expr->leftOperand = lvalue;
-			expr->rightOperand = parseValue(source);
+			expr->rightOperand = parseMulDiv(source, NULL);
 			return parseExpressionTail(source, expr);
 		case MinusOp:
 			expr = (Expression *)malloc( sizeof(Expression) );
 			(expr->v).type = MinusNode;
 			(expr->v).val.op = Minus;
 			expr->leftOperand = lvalue;
-			expr->rightOperand = parseValue(source);
+			expr->rightOperand = parseMulDiv(source, NULL);
 			return parseExpressionTail(source, expr);
 		case Alphabet:
 		case PrintOp:
@@ -453,7 +459,7 @@ Statement parseStatement( FILE *source, Token token )
 		case Alphabet:
 			next_token = scanner(source);
 			if(next_token.type == AssignmentOp){
-				value = parseValue(source);
+				value = parseMulDiv(source, NULL);
 				expr = parseExpression(source, value);
 				return makeAssignmentNode(token.tok, value, expr);
 			}

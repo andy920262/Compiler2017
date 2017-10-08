@@ -120,6 +120,7 @@ Declarations *makeDeclarationTree( Declaration decl, Declarations *decls );
 Declaration parseDeclaration( FILE *source, Token token );
 Declarations *parseDeclarations( FILE *source );
 Expression *parseValue( FILE *source );
+Expression *parseMulDiv(FILE *source, Expression *value);
 Expression *parseExpressionTail( FILE *source, Expression *lvalue );
 Expression *parseExpression( FILE *source, Expression *lvalue );
 Statement makeAssignmentNode( char *id, Expression *v, Expression *expr_tail );
