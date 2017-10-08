@@ -141,7 +141,10 @@ void fprint_op( FILE *target, ValueType op );
 void fprint_expr( FILE *target, Expression *expr , SymbolTable *table);
 void gencode( Program prog, FILE * target , SymbolTable *table);
 
-void print_expr( Expression *expr );
+void folding(Statements *stmts);
+Expression *exprFolding(Expression *exprnode);
+
+	void print_expr( Expression *expr );
 void test_parser( FILE *source );
 
 #endif // HEADER_H_INCLUDED

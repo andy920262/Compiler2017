@@ -27,6 +27,7 @@ int main( int argc, char *argv[] )
             fclose(source);
             symtab = build(program);
             check(&program, &symtab);
+			folding(program.statements);
             gencode(program, target, &symtab);
         }
     }
@@ -37,7 +38,126 @@ int main( int argc, char *argv[] )
 
     return 0;
 }
+/* Constant folding */
+void folding(Statements *stmts)
+{
+	if (stmts->first.type == Assignment) {
+		//print_expr(stmts->first.stmt.assign.expr);puts("\n");
+		stmts->first.stmt.assign.expr = exprFolding(stmts->first.stmt.assign.expr);
+	}
+	if (stmts->rest != NULL)
+		folding(stmts->rest);
+}
 
+Expression *exprFolding(Expression *exprnode) {
+	Expression *left = exprnode->leftOperand;
+	Expression *right = exprnode->rightOperand;
+	
+	if (left == NULL || right == NULL)
+		return exprnode;
+
+
+	if (left->v.type == IntToFloatConvertNode)
+		left = left->leftOperand;
+	if (right->v.type == IntToFloatConvertNode)
+		right = right->leftOperand;
+	
+	if (left != NULL)
+		left = exprFolding(left);
+	if (right != NULL)
+		right = exprFolding(right);
+	
+	if(left->v.type == IntConst && right->v.type == IntConst) {
+		switch (exprnode->v.type) {
+			case PlusNode:
+				exprnode->v.val.ivalue = left->v.val.ivalue + right->v.val.ivalue;
+				break;
+			case MinusNode:
+				exprnode->v.val.ivalue = left->v.val.ivalue - right->v.val.ivalue;
+				break;
+			case MulNode:
+				exprnode->v.val.ivalue = left->v.val.ivalue * right->v.val.ivalue;
+				break;
+			case DivNode:
+				exprnode->v.val.ivalue = left->v.val.ivalue / right->v.val.ivalue;
+				break;
+			default:
+				break;
+		}
+		exprnode->v.type = IntConst;
+		free(left);
+		free(right);
+		exprnode->leftOperand = exprnode->rightOperand = NULL;
+	} else if (left->v.type == FloatConst && right->v.type == FloatConst) {
+		switch (exprnode->v.type) {
+			case PlusNode:
+				exprnode->v.val.fvalue = left->v.val.fvalue + right->v.val.fvalue;
+				break;
+			case MinusNode:
+				exprnode->v.val.fvalue = left->v.val.fvalue - right->v.val.fvalue;
+				break;
+			case MulNode:
+				exprnode->v.val.fvalue = left->v.val.fvalue * right->v.val.fvalue;
+				break;
+			case DivNode:
+				exprnode->v.val.fvalue = left->v.val.fvalue / right->v.val.fvalue;
+				break;
+			default:
+				break;
+		}
+		exprnode->v.type = FloatConst;
+		free(left);
+		free(right);
+		exprnode->leftOperand = exprnode->rightOperand = NULL;
+	} else if (left->v.type == IntConst && right->v.type == FloatConst) {
+		switch (exprnode->v.type) {
+			case PlusNode:
+				exprnode->v.val.fvalue = left->v.val.ivalue + right->v.val.fvalue;
+				break;
+			case MinusNode:
+				exprnode->v.val.fvalue = left->v.val.ivalue - right->v.val.fvalue;
+				break;
+			case MulNode:
+				exprnode->v.val.fvalue = left->v.val.ivalue * right->v.val.fvalue;
+				break;
+			case DivNode:
+				exprnode->v.val.fvalue = left->v.val.ivalue / right->v.val.fvalue;
+				break;
+			default:
+				break;
+		}
+		exprnode->v.type = FloatConst;
+		free(left);
+		free(right);
+		exprnode->leftOperand = exprnode->rightOperand = NULL;
+	} else if (left->v.type == FloatConst && right->v.type == IntConst) {
+		switch (exprnode->v.type) {
+			case PlusNode:
+				exprnode->v.val.fvalue = left->v.val.fvalue + right->v.val.ivalue;
+				break;
+			case MinusNode:
+				exprnode->v.val.fvalue = left->v.val.fvalue - right->v.val.ivalue;
+				break;
+			case MulNode:
+				exprnode->v.val.fvalue = left->v.val.fvalue * right->v.val.ivalue;
+				break;
+			case DivNode:
+				exprnode->v.val.fvalue = left->v.val.fvalue / right->v.val.ivalue;
+				break;
+			default:
+				break;
+		}
+		exprnode->v.type = FloatConst;
+		free(left);
+		free(right);
+		exprnode->leftOperand = exprnode->rightOperand = NULL;
+	}
+
+
+	return exprnode;
+}
+ 
+ 
 /********************************************* 
   Scanning 
  *********************************************/
