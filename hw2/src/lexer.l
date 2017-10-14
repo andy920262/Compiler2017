@@ -25,7 +25,7 @@ WS   [ \t\v\n\f]+
 Int_constant {digit}+
 
 /* You need to define the following RE's */
-Float_constant {digit}*"."{digit}+
+Float_constant -?{digit}*"."{digit}+
 String_constant \"(\\.|[^\\"])*\"
 comment "/*"((\*+[^/*])|([^*]))*\**"*/"
 
@@ -70,7 +70,7 @@ error    .
 "if"            {}
 "else"          {}
 "int"           {/* return INT; */ }
-"float"         {/* return FLOAT; */}
+"float"         {/* return FLOAT; */ }
 "for"           {}
 "void"          {}
 "while"         {}
@@ -111,14 +111,15 @@ error    .
 {DL_dot}        {}
 {newline}       linenumber += 1;
 {error}         {
-            printf("ERR \n");/* return ERROR; */
-            puts(yytext);
+            printf("ERR %s\n", yytext);
+            return ERROR;
+            /*puts(yytext);*/
         }
 
 
 %%
 
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
  argc--; ++argv;
    if (argc > 0)
