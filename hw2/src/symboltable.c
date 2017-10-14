@@ -16,7 +16,7 @@ int HASH(char * str){
 		idx = idx << 1;
 		idx+=*str;
 		str++;
-	}	
+	}
 	return (idx & (TABLE_SIZE-1));
 }
 
@@ -42,7 +42,7 @@ symtab * lookup(char *name){
 void insertID(char *name){
 	int hash_key;
 	symtab* ptr;
-	symtab* symptr=(symtab*)malloc(sizeof(symtab));	
+	symtab* symptr=(symtab*)malloc(sizeof(symtab));
 	
 	hash_key=HASH(name);
 	ptr=hash_table[hash_key];
@@ -57,7 +57,7 @@ void insertID(char *name){
 		symptr->front=ptr;
 		ptr->back=symptr;
 		symptr->back=symptr;
-		hash_table[hash_key]=symptr;	
+		hash_table[hash_key]=symptr;
 	}
 	
 	strcpy(symptr->lexeme,name);
@@ -65,7 +65,7 @@ void insertID(char *name){
 	symptr->counter=1;
 }
 
-void printSym(symtab* ptr) 
+void printSym(symtab* ptr)
 {
 	    printf(" Name = %s \n", ptr->lexeme);
 	    printf(" References = %d \n", ptr->counter);
@@ -117,5 +117,5 @@ void printSymCount()
     }
 	qsort(symlist, n_sym, sizeof(symtab*), symcmp);
 	for (i = 0; i < n_sym; i++)
-		printf("%-20s%d\n", symlist[i]->lexeme, symlist[i]->counter);
+		printf("%s\t%d\n", symlist[i]->lexeme, symlist[i]->counter);
 }
