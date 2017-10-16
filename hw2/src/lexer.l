@@ -23,9 +23,10 @@ digit    [0-9]
 ID   {letter}({letter}|{digit}|"_")*
 WS   [ \t\v\n\f]+
 Int_constant {digit}+
+exponent [eE][+-]?{digit}+
 
 /* You need to define the following RE's */
-Float_constant ({digit}*"."{digit}+([eE][+-]?{digit}+)?)|({digit}+"."{digit}*([eE][+-]?{digit}+)?)
+Float_constant ({digit}*"."{digit}+{exponent}?)|({digit}+"."{digit}*{exponent}?)|({digit}+{exponent})
 String_constant \"[^\n\"]*\"
 comment "/*"((\*+[^/*])|([^*]))*\**"*/"
 
