@@ -22,11 +22,11 @@ letter   [A-Za-z]
 digit    [0-9]
 ID   {letter}({letter}|{digit}|"_")*
 WS   [ \t\v\n\f]+
-Int_constant {digit}+
+Int_constant -?{digit}+
 
 /* You need to define the following RE's */
-Float_constant -?{digit}*"."{digit}+
-String_constant \"(\\.|[^\\"])*\"
+Float_constant -?{digit}*\.?{digit}+([eE]-?{digit}+)?
+String_constant \"[^\n\"]*\"
 comment "/*"((\*+[^/*])|([^*]))*\**"*/"
 
 
@@ -76,7 +76,7 @@ error    .
 "while"         {}
 {Int_constant}  {}
 {Float_constant}    {}
-{String_constant}	{}
+{String_constant} {}
 {comment}       {puts(yytext);}
 {ID}            {
             ptr = lookup(yytext);
@@ -109,7 +109,7 @@ error    .
 {DL_comma}      {}
 {DL_semicol}    {}
 {DL_dot}        {}
-{newline}       linenumber += 1;
+{newline}       {linenumber += 1;}
 {error}         {
             printf("ERR %s\n", yytext);
             return ERROR;
