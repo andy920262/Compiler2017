@@ -426,7 +426,7 @@ void checkFunctionCall(AST_NODE* functionCallNode)
     AST_NODE* actualParameter = actualParameterList->child;
     Parameter* formalParameter = sym->attribute->attr.functionSignature->parameterList;
     
-    while (actualParameter && formalParameter) {
+    while (actualParameter != NULL && formalParameter != NULL) {
         checkParameterPassing(formalParameter, actualParameter);
         if (actualParameter->dataType == ERROR_TYPE) {
             functionCallNode->dataType = ERROR_TYPE;
@@ -727,7 +727,6 @@ void processVariableRValue(AST_NODE* idNode)
         idNode->dataType = ERROR_TYPE;
         return;
     }
-    
     TypeDescriptor *typeDesc = idNode->semantic_value.identifierSemanticValue.symbolTableEntry->attribute->attr.typeDescriptor;
 
     if (idNode->semantic_value.identifierSemanticValue.kind == NORMAL_ID) {
@@ -963,9 +962,11 @@ void declareFunction(AST_NODE* declarationNode)
         AST_NODE *paramId = paramNode->child->rightSibling;
         Parameter *param = (Parameter*)malloc(sizeof(Parameter));
         param->next = NULL;
-        param->parameterName = paramId->semantic_value.identifierSemanticValue.identifierName;
+        param->parameterName = getIdNodeName(paramId);
         param->type = paramId->semantic_value.identifierSemanticValue.symbolTableEntry->attribute->attr.typeDescriptor;
-        attribute->attr.functionSignature->parameterList = param;
+        if (lastParam == NULL) {
+            attribute->attr.functionSignature->parameterList = param;
+        }
         if (lastParam != NULL) {
             lastParam->next = param;
         }
