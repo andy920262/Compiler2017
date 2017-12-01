@@ -120,7 +120,6 @@ void initializeSymbolTable()    /*DONE*/
     Attr->attr.functionSignature->returnType = FLOAT_TYPE;
     enterSymbol(SYMBOL_TABLE_SYS_LIB_FREAD, Attr);
 
-    free(Attr);
 }
 
 void symbolTableEnd()   /*DONE*/

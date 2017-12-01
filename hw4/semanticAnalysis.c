@@ -90,17 +90,17 @@ void printErrorMsg(AST_NODE* node, ErrorMsgKind errorMsgKind)
     g_anyErrorOccur = 1;
     printf("Error found in line %d\n", node->linenumber);
 
-	switch(errorMsgKind)
+    switch(errorMsgKind)
     {
         case SYMBOL_IS_NOT_TYPE:
             printf("ID %s is not type.\n", getIdNodeName(node));
             break;
-		case SYMBOL_REDECLARE:
-			printf("ID %s redeclared.\n", getIdNodeName(node));
-			break;
-		case SYMBOL_UNDECLARED:
-			printf("ID %s undeclared.\n", getIdNodeName(node));
-			break;
+        case SYMBOL_REDECLARE:
+            printf("ID %s redeclared.\n", getIdNodeName(node));
+            break;
+        case SYMBOL_UNDECLARED:
+            printf("ID %s undeclared.\n", getIdNodeName(node));
+            break;
         case NOT_FUNCTION_NAME:
             printf("ID %s is not a function.\n", getIdNodeName(node));
             break;
@@ -122,15 +122,15 @@ void printErrorMsg(AST_NODE* node, ErrorMsgKind errorMsgKind)
         case PARAMETER_TYPE_UNMATCH:
             printf("Parameter %s type unmatch.\n", getIdNodeName(node));
             break;
-		case TOO_FEW_ARGUMENTS:
-			printf("too few arguments to function %s.\n", getIdNodeName(node));
-			break;
-		case TOO_MANY_ARGUMENTS:
-			printf("too many arguments to function %s.\n", getIdNodeName(node));
-			break;
-		case RETURN_TYPE_UNMATCH:
-			printf("Incompatible return type.\n");
-			break;
+        case TOO_FEW_ARGUMENTS:
+            printf("too few arguments to function %s.\n", getIdNodeName(node));
+            break;
+        case TOO_MANY_ARGUMENTS:
+            printf("too many arguments to function %s.\n", getIdNodeName(node));
+            break;
+        case RETURN_TYPE_UNMATCH:
+            printf("Incompatible return type.\n");
+            break;
         case INCOMPATIBLE_ARRAY_DIMENSION:
             printf("Incompatible array dim in %s.\n", getIdNodeName(node));
             break;
@@ -155,22 +155,22 @@ void printErrorMsg(AST_NODE* node, ErrorMsgKind errorMsgKind)
         case ARRAY_SIZE_NEGATIVE:
             printf("Array size is negative in %s.\n", getIdNodeName(node));
             break;
-		case ARRAY_SUBSCRIPT_NOT_INT:
-			printf("Array subscript is not an integer.\n");
-			break;
-		default:
-			printf("Unhandled case in void printErrorMsg(AST_NODE* node, ERROR_MSG_KIND* errorMsgKind)\n");
-			break;
+        case ARRAY_SUBSCRIPT_NOT_INT:
+            printf("Array subscript is not an integer.\n");
+            break;
+        default:
+            printf("Unhandled case in void printErrorMsg(AST_NODE* node, ERROR_MSG_KIND* errorMsgKind)\n");
+            break;
     }
 }
 
 char* getIdNodeName(AST_NODE *node)
 {
     if (node->nodeType != IDENTIFIER_NODE) {
-		return NULL;
-	}
-	return node->semantic_value.identifierSemanticValue.identifierName;
-	
+        return NULL;
+    }
+    return node->semantic_value.identifierSemanticValue.identifierName;
+    
 }
 
 void semanticAnalysis(AST_NODE *root)
@@ -191,8 +191,8 @@ DATA_TYPE getBiggerType(DATA_TYPE dataType1, DATA_TYPE dataType2)
 
 void processProgramNode(AST_NODE *programNode)
 {
-	AST_NODE *node = programNode->child;
-	while (node != NULL) {
+    AST_NODE *node = programNode->child;
+    while (node != NULL) {
         switch (node->nodeType) {
             case VARIABLE_DECL_LIST_NODE:
                 processGeneralNode(node);
@@ -204,22 +204,22 @@ void processProgramNode(AST_NODE *programNode)
                 printf("Wrong node type in void processProgramNode().\n");
                 break;
         }
-		node = node->rightSibling;
-	}
+        node = node->rightSibling;
+    }
 }
 
 void processDeclarationNode(AST_NODE* declarationNode)
 {
-	AST_NODE *typeNode = declarationNode->child;
-	processTypeNode(typeNode);
+    AST_NODE *typeNode = declarationNode->child;
+    processTypeNode(typeNode);
     if(typeNode->dataType == ERROR_TYPE) {
         declarationNode->dataType = ERROR_TYPE;
         return;
     }
-	switch (declarationNode->semantic_value.declSemanticValue.kind) {
-		case VARIABLE_DECL:
-			declareIdList(declarationNode, VARIABLE_ATTRIBUTE, 0);
-			break;
+    switch (declarationNode->semantic_value.declSemanticValue.kind) {
+        case VARIABLE_DECL:
+            declareIdList(declarationNode, VARIABLE_ATTRIBUTE, 0);
+            break;
         case TYPE_DECL:
             declareIdList(declarationNode, TYPE_ATTRIBUTE, 0);
             break;
@@ -229,21 +229,21 @@ void processDeclarationNode(AST_NODE* declarationNode)
         case FUNCTION_PARAMETER_DECL:
             declareIdList(declarationNode, VARIABLE_ATTRIBUTE, 1);
             break;
-		default:
-			break;
-	}
+        default:
+            break;
+    }
 }
 
 
 void processTypeNode(AST_NODE* idNodeAsType)
 {
-	char *typename = getIdNodeName(idNodeAsType);
-	SymbolTableEntry *sym = retrieveSymbol(typename);
-	if (sym == NULL || sym->attribute->attributeKind != TYPE_ATTRIBUTE) {
-		printErrorMsg(idNodeAsType, SYMBOL_IS_NOT_TYPE);
+    char *typename = getIdNodeName(idNodeAsType);
+    SymbolTableEntry *sym = retrieveSymbol(typename);
+    if (sym == NULL || sym->attribute->attributeKind != TYPE_ATTRIBUTE) {
+        printErrorMsg(idNodeAsType, SYMBOL_IS_NOT_TYPE);
         idNodeAsType->dataType = ERROR_TYPE;
-	} else {
-		idNodeAsType->semantic_value.identifierSemanticValue.symbolTableEntry = sym;
+    } else {
+        idNodeAsType->semantic_value.identifierSemanticValue.symbolTableEntry = sym;
         switch (sym->attribute->attr.typeDescriptor->kind) {
             case SCALAR_TYPE_DESCRIPTOR:
                 idNodeAsType->dataType = sym->attribute->attr.typeDescriptor->properties.dataType;
@@ -252,29 +252,29 @@ void processTypeNode(AST_NODE* idNodeAsType)
                 idNodeAsType->dataType = sym->attribute->attr.typeDescriptor->properties.arrayProperties.elementType;
                 break;
         }
-	}
+    }
 }
 
 
 void declareIdList(AST_NODE* declarationNode, SymbolAttributeKind isVariableOrTypeAttribute, int ignoreArrayFirstDimSize)
 {
-	AST_NODE *typeNode = declarationNode->child;
-	AST_NODE *idNode = typeNode->rightSibling;
-	TypeDescriptor *typeDesc = typeNode->semantic_value.identifierSemanticValue.symbolTableEntry->attribute->attr.typeDescriptor;
+    AST_NODE *typeNode = declarationNode->child;
+    AST_NODE *idNode = typeNode->rightSibling;
+    TypeDescriptor *typeDesc = typeNode->semantic_value.identifierSemanticValue.symbolTableEntry->attribute->attr.typeDescriptor;
 
-	while (idNode != NULL) {
-		char *name = getIdNodeName(idNode);
-		if (declaredLocally(name)) {
-			printErrorMsg(idNode, SYMBOL_REDECLARE);
+    while (idNode != NULL) {
+        char *name = getIdNodeName(idNode);
+        if (declaredLocally(name)) {
+            printErrorMsg(idNode, SYMBOL_REDECLARE);
             declarationNode->dataType = ERROR_TYPE;
             idNode = idNode->rightSibling;
-			continue;
-		}
+            continue;
+        }
 
-		SymbolAttribute *attr = malloc(sizeof(SymbolAttribute));
-		attr->attributeKind = isVariableOrTypeAttribute;
+        SymbolAttribute *attr = malloc(sizeof(SymbolAttribute));
+        attr->attributeKind = isVariableOrTypeAttribute;
 
-		switch (idNode->semantic_value.identifierSemanticValue.kind) {
+        switch (idNode->semantic_value.identifierSemanticValue.kind) {
             case NORMAL_ID:
                 attr->attr.typeDescriptor = typeDesc;
                 break;
@@ -309,12 +309,12 @@ void declareIdList(AST_NODE* declarationNode, SymbolAttributeKind isVariableOrTy
                     processExprRelatedNode(idNode->child);
                 }
                 break;
-		}
+        }
         if (idNode->dataType != ERROR_TYPE) {
-	        idNode->semantic_value.identifierSemanticValue.symbolTableEntry = enterSymbol(name, attr);
+            idNode->semantic_value.identifierSemanticValue.symbolTableEntry = enterSymbol(name, attr);
         }
         idNode = idNode->rightSibling;
-	}
+    }
 }
 
 void checkAssignOrExpr(AST_NODE* assignOrExprRelatedNode)
@@ -892,24 +892,24 @@ void processGeneralNode(AST_NODE *node)
 
 void processDeclDimList(AST_NODE* idNode, TypeDescriptor* typeDescriptor, int ignoreFirstDimSize)
 {
-	AST_NODE *dimNode = idNode->child;
-	int dim = 0;
-	if (ignoreFirstDimSize) {
-		typeDescriptor->properties.arrayProperties.sizeInEachDimension[dim] = 0;
-		dim++;
-		dimNode = dimNode->rightSibling;
-	}
-	while (dimNode != NULL) {
+    AST_NODE *dimNode = idNode->child;
+    int dim = 0;
+    if (ignoreFirstDimSize) {
+        typeDescriptor->properties.arrayProperties.sizeInEachDimension[dim] = 0;
+        dim++;
+        dimNode = dimNode->rightSibling;
+    }
+    while (dimNode != NULL) {
         if (++dim > MAX_ARRAY_DIMENSION) {
             printErrorMsg(idNode, EXCESSIVE_ARRAY_DIM_DECLARATION);
             idNode->dataType = ERROR_TYPE;
             break;
         }
         processExprRelatedNode(dimNode);
-		if (dimNode->dataType != INT_TYPE) {
-			printErrorMsg(idNode, ARRAY_SIZE_NOT_INT);
+        if (dimNode->dataType != INT_TYPE) {
+            printErrorMsg(idNode, ARRAY_SIZE_NOT_INT);
             idNode->dataType = ERROR_TYPE;
-		} else if (dimNode->semantic_value.exprSemanticValue.isConstEval && dimNode->semantic_value.exprSemanticValue.constEvalValue.iValue < 0) {
+        } else if (dimNode->semantic_value.exprSemanticValue.isConstEval && dimNode->semantic_value.exprSemanticValue.constEvalValue.iValue < 0) {
             printErrorMsg(idNode, ARRAY_SIZE_NEGATIVE);
             idNode->dataType = ERROR_TYPE;
         }
@@ -917,11 +917,11 @@ void processDeclDimList(AST_NODE* idNode, TypeDescriptor* typeDescriptor, int ig
             return;
         }
                
-		int dimSize = dimNode->semantic_value.exprSemanticValue.constEvalValue.iValue;
-		typeDescriptor->properties.arrayProperties.sizeInEachDimension[dim] = dimSize;
-		dimNode = dimNode->rightSibling;
-	}
-	typeDescriptor->properties.arrayProperties.dimension = dim;
+        int dimSize = dimNode->semantic_value.exprSemanticValue.constEvalValue.iValue;
+        typeDescriptor->properties.arrayProperties.sizeInEachDimension[dim] = dimSize;
+        dimNode = dimNode->rightSibling;
+    }
+    typeDescriptor->properties.arrayProperties.dimension = dim;
 }
 
 
