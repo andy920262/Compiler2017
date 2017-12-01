@@ -75,7 +75,8 @@ typedef struct SymbolTableEntry
 {
     struct SymbolTableEntry* nextInHashChain;
     struct SymbolTableEntry* prevInHashChain;
-    struct SymbolTableEntry* nextInSameLevel;
+    struct SymbolTableEntry* nextInStack;
+    struct SymbolTableEntry* nextInStackChain;
     struct SymbolTableEntry* sameNameInOuterLevel;
 
     char* name;
@@ -87,9 +88,8 @@ typedef struct SymbolTableEntry
 typedef struct SymbolTable
 {
     SymbolTableEntry* hashTable[HASH_TABLE_SIZE];
-    SymbolTableEntry** scopeDisplay;
+    SymbolTableEntry* scopeStack;
     int currentLevel;
-    int scopeDisplayElementCount;
 } SymbolTable;
 
 
