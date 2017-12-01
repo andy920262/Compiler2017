@@ -90,18 +90,21 @@ void initializeSymbolTable()    /*DONE*/
     Attr->attr.typeDescriptor->properties.dataType = INT_TYPE;
     enterSymbol(SYMBOL_TABLE_INT_NAME, Attr);
 
+    Attr = (SymbolAttribute*)malloc(sizeof(SymbolAttribute));
     Attr->attributeKind = TYPE_ATTRIBUTE;
     Attr->attr.typeDescriptor = (TypeDescriptor*)malloc(sizeof(TypeDescriptor));
     Attr->attr.typeDescriptor->kind = SCALAR_TYPE_DESCRIPTOR;
     Attr->attr.typeDescriptor->properties.dataType = FLOAT_TYPE;
     enterSymbol(SYMBOL_TABLE_FLOAT_NAME, Attr);
 
+    Attr = (SymbolAttribute*)malloc(sizeof(SymbolAttribute));
     Attr->attributeKind = TYPE_ATTRIBUTE;
     Attr->attr.typeDescriptor = (TypeDescriptor*)malloc(sizeof(TypeDescriptor));
     Attr->attr.typeDescriptor->kind = SCALAR_TYPE_DESCRIPTOR;
     Attr->attr.typeDescriptor->properties.dataType = VOID_TYPE;
     enterSymbol(SYMBOL_TABLE_VOID_NAME, Attr);
 
+    Attr = (SymbolAttribute*)malloc(sizeof(SymbolAttribute));
     Attr->attributeKind = FUNCTION_SIGNATURE;
     Attr->attr.functionSignature = (FunctionSignature*)malloc(sizeof(FunctionSignature));
     Attr->attr.functionSignature->parametersCount = 0;
@@ -109,6 +112,7 @@ void initializeSymbolTable()    /*DONE*/
     Attr->attr.functionSignature->returnType = INT_TYPE;
     enterSymbol(SYMBOL_TABLE_SYS_LIB_READ, Attr);
 
+    Attr = (SymbolAttribute*)malloc(sizeof(SymbolAttribute));
     Attr->attributeKind = FUNCTION_SIGNATURE;
     Attr->attr.functionSignature = (FunctionSignature*)malloc(sizeof(FunctionSignature));
     Attr->attr.functionSignature->parametersCount = 0;
@@ -259,7 +263,7 @@ void closeScope()   /*DONE*/
     }
 
     SymbolTableEntry* head = symbolTable.scopeStack;
-    while (head) {
+    while (head && head->name) {
         int hash = HASH(head->name);
         removeFromHashTrain(hash, head);
         if (head->sameNameInOuterLevel) {
