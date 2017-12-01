@@ -5,7 +5,8 @@ CC = gcc -g
 LEX = flex
 YACC = bison -v
 YACCFLAG = -d
-LIBS = -ll 
+LIBS = -lfl
+#LIBS = -ll # For mac OSX
 
 parser: parser.tab.o alloc.o functions.o symbolTable.o semanticAnalysis.o 
 	$(CC) -o $(TARGET) parser.tab.o alloc.o functions.o symbolTable.o semanticAnalysis.o $(LIBS)
