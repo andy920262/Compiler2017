@@ -93,19 +93,19 @@ void printErrorMsg(AST_NODE* node, ErrorMsgKind errorMsgKind)
     switch(errorMsgKind)
     {
         case SYMBOL_IS_NOT_TYPE:
-            printf("ID %s is not type.\n", getIdNodeName(node));
+            printf("ID \'%s\' is not type.\n", getIdNodeName(node));
             break;
         case SYMBOL_REDECLARE:
-            printf("ID %s redeclared.\n", getIdNodeName(node));
+            printf("ID \'%s\' redeclared.\n", getIdNodeName(node));
             break;
         case SYMBOL_UNDECLARED:
-            printf("ID %s undeclared.\n", getIdNodeName(node));
+            printf("ID \'%s\' undeclared.\n", getIdNodeName(node));
             break;
         case NOT_FUNCTION_NAME:
-            printf("ID %s is not a function.\n", getIdNodeName(node));
+            printf("ID \'%s\' is not a function.\n", getIdNodeName(node));
             break;
         case TRY_TO_INIT_ARRAY:
-            printf("Try to init a array %s.\n", getIdNodeName(node));
+            printf("Try to init a array \'%s\'.\n", getIdNodeName(node));
             break;
         case EXCESSIVE_ARRAY_DIM_DECLARATION:
             printf("Excessive array dimension declaration.\n");
@@ -114,46 +114,46 @@ void printErrorMsg(AST_NODE* node, ErrorMsgKind errorMsgKind)
             printf("Return a array.\n");
             break;
         case VOID_VARIABLE:
-            printf("Void variable %s.\n", getIdNodeName(node));
+            printf("Void variable \'%s\'.\n", getIdNodeName(node));
             break;
         case TYPEDEF_VOID_ARRAY:
-            printf("Define void array %s.\n", getIdNodeName(node));
+            printf("Define void array \'%s\'.\n", getIdNodeName(node));
             break;
         case PARAMETER_TYPE_UNMATCH:
-            printf("Parameter %s type unmatch.\n", getIdNodeName(node));
+            printf("Parameter \'%s\' type unmatch.\n", getIdNodeName(node));
             break;
         case TOO_FEW_ARGUMENTS:
-            printf("too few arguments to function %s.\n", getIdNodeName(node));
+            printf("too few arguments to function \'%s\'.\n", getIdNodeName(node));
             break;
         case TOO_MANY_ARGUMENTS:
-            printf("too many arguments to function %s.\n", getIdNodeName(node));
+            printf("too many arguments to function \'%s\'.\n", getIdNodeName(node));
             break;
         case RETURN_TYPE_UNMATCH:
             printf("Incompatible return type.\n");
             break;
         case INCOMPATIBLE_ARRAY_DIMENSION:
-            printf("Incompatible array dim in %s.\n", getIdNodeName(node));
+            printf("Incompatible array dim in \'%s\'.\n", getIdNodeName(node));
             break;
         case NOT_ASSIGNABLE:
-            printf("%s is not assignable.\n", getIdNodeName(node));
+            printf("\'%s\' is not assignable.\n", getIdNodeName(node));
             break;
         case NOT_ARRAY:
-            printf("%s is not a array.\n", getIdNodeName(node));
+            printf("\'%s\' is not a array.\n", getIdNodeName(node));
             break;
         case IS_TYPE_NOT_VARIABLE:
-            printf("%s is type not a variable.\n", getIdNodeName(node));
+            printf("\'%s\' is type not a variable.\n", getIdNodeName(node));
             break;
         case IS_FUNCTION_NOT_VARIABLE:
-            printf("%s is a function not a variable.\n", getIdNodeName(node));
+            printf("\'%s\' is a function not a variable.\n", getIdNodeName(node));
             break;
         case STRING_OPERATION:
             printf("String operation.\n");
             break;
         case ARRAY_SIZE_NOT_INT:
-            printf("Array size is not int in %s.\n", getIdNodeName(node));
+            printf("Array size is not int in \'%s\'.\n", getIdNodeName(node));
             break;
         case ARRAY_SIZE_NEGATIVE:
-            printf("Array size is negative in %s.\n", getIdNodeName(node));
+            printf("Array size is negative in \'%s\'.\n", getIdNodeName(node));
             break;
         case ARRAY_SUBSCRIPT_NOT_INT:
             printf("Array subscript is not an integer.\n");
@@ -167,7 +167,7 @@ void printErrorMsg(AST_NODE* node, ErrorMsgKind errorMsgKind)
 char* getIdNodeName(AST_NODE *node)
 {
     if (node->nodeType != IDENTIFIER_NODE) {
-        return NULL;
+        return "";
     }
     return node->semantic_value.identifierSemanticValue.identifierName;
     
@@ -802,6 +802,10 @@ void checkReturnStmt(AST_NODE* returnNode)
         funcTypeNode = funcTypeNode->parent->leftmostSibling;
     }
     processExprRelatedNode(returnValNode);
+    if ((returnValNode->dataType == INT_TYPE || returnValNode->dataType == FLOAT_TYPE) &&
+        (funcTypeNode->dataType == INT_TYPE || funcTypeNode->dataType == FLOAT_TYPE)) {
+            return;
+    }
     if ((returnValNode->nodeType == NUL_NODE && funcTypeNode->dataType == VOID_TYPE) ||
         returnValNode->dataType != funcTypeNode->dataType) {
         printErrorMsg(returnNode, RETURN_TYPE_UNMATCH);
