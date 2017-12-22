@@ -11,5 +11,5 @@
 void codegen(AST_NODE *program);
 void gen_function(AST_NODE *decl_node);
 void gen_block(AST_NODE *block_node);
-
+void gen_statement(AST_NODE *stmt_node);
 #endif
