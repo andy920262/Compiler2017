@@ -13,23 +13,19 @@
 #define stmt_kind(node) node->semantic_value.stmtSemanticValue.kind
 #define expr_kind(node) node->semantic_value.exprSemanticValue.kind
 #define sym_typedesc(sym) sym->attribute->attr.typeDescriptor
-#define id_ival(node) node->child->semantic_value.const1->const_u.intval
-#define id_fval(node) node->child->semantic_value.const1->const_u.fval
+#define const_ival(node) node->semantic_value.const1->const_u.intval
+#define const_fval(node) node->semantic_value.const1->const_u.fval
+#define const_sval(node) node->semantic_value.const1->const_u.sc
+#define expr_const_eval(node) node->semantic_value.exprSemanticValue.isConstEval
 #define const_type(node) node->semantic_value.const1->const_type
-
-typedef enum REG {
-    w9, w10, w11, w12, w13, w14, w15,
-    s16, s17, s18, s19, s20, s21, s22, s23
-} REG;
+#define expr_bin_op(node) node->semantic_value.exprSemanticValue.op.binaryOp
+#define expr_uni_op(node) node->semantic_value.exprSemanticValue.op.unaryOp
 
 
-char* int_reg = {
-    "w9", "w10", "w11", "w12", "w13", "w14", "w15"
-};
+#define get_int_reg() int_reg[(g_int_reg_cnt++) % 7]
+#define get_float_reg() float_reg[(g_float_reg_cnt++) % 8]
+#define get_addr_reg() addr_reg[(g_addr_reg_cnt++) % 7]
 
-char* float_reg = {
-    "s16", "s17", "s18", "s19", "s20", "s21", "s22", "s23"
-};
 
 void codegen(AST_NODE *program);
 void gen_global_var(AST_NODE *decl_list_node);
@@ -40,6 +36,6 @@ void gen_stmt(AST_NODE *stmt_node);
 void gen_while(AST_NODE *stmt_node);
 void gen_assign(AST_NODE *stmt_node);
 void gen_if(AST_NODE *stmt_node);
-REG gen_expr(AST_NODE *expr_node);
+char *gen_expr(AST_NODE *expr_node);
 void gen_func_call(AST_NODE *stmt_node);
 #endif

@@ -5,6 +5,25 @@
 
 FILE fp;
 int while_count = 0;
+int g_const_cnt = 0;
+
+int g_int_reg_cnt = 0;
+int g_float_reg_cnt = 0;
+int g_addr_reg_cnt = 0;
+
+char *x0 = "x0";
+char *w0 = "w0";
+char *s0 = "s0";
+
+char *addr_reg[] = {
+    "x9", "x10", "x11", "x12", "x13", "x14", "x15"
+};
+char *int_reg[] = {
+    "w9", "w10", "w11", "w12", "w13", "w14", "w15"
+};
+char *float_reg[] = {
+    "s16", "s17", "s18", "s19", "s20", "s21", "s22", "s23"
+};
 
 void codegen(AST_NODE *program) {
     AST_NODE *child = program->child;
@@ -19,28 +38,112 @@ void codegen(AST_NODE *program) {
 }
 
 
-REG gen_expr(AST_NODE *expr_node) {
-    REG r1, r2, r3;
-    if (data_type(expr_node) == INT_TYPE) {
-        r1 = w9, r2 = w10, r3 = w11;
-    } else {
-        r1 = s16, r2 = s17, r3 = s18;
-    }
-    switch (node_type(expr_rel_node)) {
-        case EXPR_NODE:
-            gen_expr(expr_rel_node);
-            break;
-        case STMT_NODE:
-            gen_func_call(expr_rel_node);
-            return X0;
-        case IDENTIFIER_NODE:
-            break;
-        case CONST_VALUE_NODE:
-            break;
-        default:
-            break;
-    }
+char *gen_expr(AST_NODE *expr_node)
+{
 
+    char *r1, *r2, *r3;
+    char type; 
+    switch (node_type(expr_node)) {
+        case EXPR_NODE:
+            if (expr_const_eval(expr_node)) {
+                if (data_type(expr_node) == INT_TYPE) {
+                    r1 = get_int_reg();
+                    printf("mov %s #%d\n", r1, const_ival(expr_node));
+                } else if (data_type(expr_node) == FLOAT_TYPE) {
+                    r1 = get_float_reg();
+                    printf(".data\n");
+                    printf("__CONST_%d: .float %f", g_const_cnt, const_fval(expr_node));
+                    printf(".text");
+                    printf("ldr %s, =_CONST_%d", r1, g_const_cnt++);
+                }
+            } else if (expr_kind(expr_node) == BINARY_OPERATION) {
+                if (data_type(expr_node) == INT_TYPE) {
+                    r1 = get_int_reg();
+                    type = '\0';
+                } else if (data_type(expr_node) == FLOAT_TYPE) {
+                    r1 = get_float_reg();
+                    type = 'f';
+                }
+                r2 = gen_expr(expr_node->child);
+                r3 = gen_expr(expr_node->child->rightSibling);
+                switch (expr_bin_op(expr_node)) {
+                    case BINARY_OP_ADD: printf("%cadd %s, %s, %s", type, r1, r2, r3); break;
+                    case BINARY_OP_SUB: printf("%csub %s, %s, %s", type, r1, r2, r3); break;
+                    case BINARY_OP_MUL: printf("%cmul %s, %s, %s", type, r1, r2, r3); break;
+                    case BINARY_OP_DIV: printf("%cdiv %s, %s, %s", type == 'f' ? 's' : 'f', r1, r2, r3); break;
+                    case BINARY_OP_AND: printf("%cand %s, %s, %s", type, r1, r2, r3); break;
+                    case BINARY_OP_OR: printf("%corr %s, %s, %s", type, r1, r2, r3); break;
+                    case BINARY_OP_EQ: case BINARY_OP_GE: case BINARY_OP_LE:
+                    case BINARY_OP_NE: case BINARY_OP_GT: case BINARY_OP_LT:
+                    printf("%ccmp %s, %s", type, r2, r3);
+                    switch (expr_bin_op(expr_node)) {
+                        case BINARY_OP_EQ: printf("cset %s, eq", r1); break;
+                        case BINARY_OP_GE: printf("cset %s, ge", r1); break;
+                        case BINARY_OP_LE: printf("cset %s, le", r1); break;
+                        case BINARY_OP_NE: printf("cset %s, ne", r1); break;
+                        case BINARY_OP_GT: printf("cset %s, gt", r1); break;
+                        case BINARY_OP_LT: printf("cset %s, lt", r1); break;
+                        default: break;
+                    }
+                    default: break;
+                }
+            } else if (expr_kind(expr_node) == UNARY_OPERATION) {
+                r1 = gen_expr(expr_node->child);
+                switch (expr_uni_op(expr_node)) {
+                    case UNARY_OP_POSITIVE: break;
+                    case UNARY_OP_NEGATIVE: printf("%csub %s, , %s", r1, REG[lhs]); break;
+                    case UNARY_OP_LOGICAL_NEGATION:
+                        emit("vcmp.f32 %s, #0", REG[lhs]);
+                        emit("vmrs apsr_nzcv, fpscr");
+                        emit("moveq %s, #1", REG[dst]);
+                        emit("movne %s, #0", REG[dst]);
+                        break;
+                    default: ;
+                } 
+            }
+            break;
+
+        case STMT_NODE:
+            gen_func_call(expr_node);
+            if (data_type(expr_node) == INT_TYPE) {
+                r1 = w0;
+            } else if (data_type(expr_node) == FLOAT_TYPE) {
+                r1 = s0;
+            } else if (data_type(expr_node) == CONST_STRING_TYPE) {
+                r1 = x0;
+            }
+            break;
+
+        case IDENTIFIER_NODE:
+            if (data_type(expr_node) == INT_TYPE) {
+                r1 = get_int_reg();
+            } else if (data_type(expr_node) == FLOAT_TYPE) {
+                r1 = get_float_reg();
+            }
+            printf("ldr %s [fp #%d]\n", r1, id_sym(expr_node)->offset);
+            break;
+
+        case CONST_VALUE_NODE:
+            if (const_type(expr_node) == INTEGERC) {
+                r1 = get_int_reg();
+                printf("mov %s #%d\n", r1, const_ival(expr_node));
+            } else if (const_type(expr_node) == FLOATC) {
+                r1 = get_float_reg();
+                printf(".data\n");
+                printf("__CONST_%d: .float %f", g_const_cnt, const_fval(expr_node));
+                printf(".text");
+                printf("ldr %s, =_CONST_%d", r1, g_const_cnt++);
+            } else if (const_type(expr_node) == STRINGC) { 
+                r1 = get_addr_reg();
+                printf(".data\n");
+                printf("__CONST_%d: .ascii %s", g_const_cnt, const_sval(expr_node));
+                printf(".text");
+                printf("ldr %s, =_CONST_%d", r1, g_const_cnt++);
+            }
+            break;
+        default: break;
+    }
+    return r1;
 }
 
 void gen_stmt(AST_NODE *stmt_node) {
@@ -67,7 +170,7 @@ void gen_stmt(AST_NODE *stmt_node) {
         case FUNCTION_CALL_STMT:
             gen_func_call(stmt_node);
             break;
-defualt:
+        defualt:
             break;
     }
 
@@ -75,20 +178,23 @@ defualt:
 
 void gen_while(AST_NODE* stmt_node) {
     while_count++;
-    REG test_r;
+    char* test_r;
     AST_NODE* block_node = stmt_node->child->rightSibling;
+    AST_NODE* expr_node = stmt_node->child;
     char test_label[15];
     char exit_label[15];
     sprintf(test_label, "_while_test%d", while_count);
     sprintf(exit_label, "_while_exit%d", while_count);
 
     printf("%s:\n", test_label);
-    test_r = gen_expr(stmt_node->child);
-    if (test_r < 7) {
-        printf("cmp w%d, #0\n", test_r);
-    } else {
-        printf("fcmp s%d, #0\n", test_r);
+    test_r = gen_expr(expr_node);
+
+    if (data_type(expr_node) == INT_TYPE) {
+        printf("cmp %s, #0\n", test_r);
+    } else if (data_type(expr_node) == FLOAT_TYPE) {
+        printf("fcmp %s, #0\n", test_r);
     }
+
     printf("beq %s\n", exit_label);
     gen_block(block_node);
     printf("b %s\n", test_label);
@@ -125,7 +231,7 @@ void gen_global_var(AST_NODE *decl_list_node) {
                         /* TODO: global array */
                         break;
                     case WITH_INIT_ID:
-                        value = const_type(id_node->child) == FLOATC ? id_ival(id_node) : id_fval(id_node);
+                        value = const_type(id_node->child) == FLOATC ? const_ival(id_node->child) : const_fval(id_node->child); 
                         if (data_type(type_node) == INT_TYPE) {
                             printf("_g_%s: .word %d\n", id_name(id_node), (int)value);
                         } else {

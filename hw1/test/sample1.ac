@@ -1,7 +1,0 @@
-i aaa
-f bbb
-
-aaa = 1
-bbb = 2 + 1.0 / a
-
-p bbb

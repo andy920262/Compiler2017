@@ -2769,7 +2769,9 @@ char *argv[];
      semanticAnalysis(prog);
      
      offset_analysis(prog);
-
+    
+     codegen(prog);
+    
      symbolTableEnd();
      if (!g_anyErrorOccur) {
         printf("Parsing completed. No errors found.\n");
