@@ -22,7 +22,7 @@
 #define expr_uni_op(node) node->semantic_value.exprSemanticValue.op.unaryOp
 
 
-#define get_int_reg() int_reg[(g_int_reg_cnt++) % 7]
+#define get_int_reg() int_reg[(g_addr_reg_cnt++) % 7]
 #define get_float_reg() float_reg[(g_float_reg_cnt++) % 8]
 #define get_addr_reg() addr_reg[(g_addr_reg_cnt++) % 7]
 
