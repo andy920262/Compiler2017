@@ -42,8 +42,7 @@ void codegen(AST_NODE *program) {
 }
 
 
-char *gen_expr(AST_NODE *expr_node)
-{
+char *gen_expr(AST_NODE *expr_node) {
     char *r1, *r2, *r3, type;
     switch (node_type(expr_node)) {
         case EXPR_NODE:
@@ -77,16 +76,16 @@ char *gen_expr(AST_NODE *expr_node)
                     case BINARY_OP_OR: printf("%corr %s, %s, %s\n", type, r1, r2, r3); break;
                     case BINARY_OP_EQ: case BINARY_OP_GE: case BINARY_OP_LE:
                     case BINARY_OP_NE: case BINARY_OP_GT: case BINARY_OP_LT:
-                    printf("%ccmp %s, %s\n", type, r2, r3);
-                    switch (expr_bin_op(expr_node)) {
-                        case BINARY_OP_EQ: printf("cset %s, eq\n", r1); break;
-                        case BINARY_OP_GE: printf("cset %s, ge\n", r1); break;
-                        case BINARY_OP_LE: printf("cset %s, le\n", r1); break;
-                        case BINARY_OP_NE: printf("cset %s, ne\n", r1); break;
-                        case BINARY_OP_GT: printf("cset %s, gt\n", r1); break;
-                        case BINARY_OP_LT: printf("cset %s, lt\n", r1); break;
-                        default: break;
-                    }
+                        printf("%ccmp %s, %s\n", type, r2, r3);
+                        switch (expr_bin_op(expr_node)) {
+                            case BINARY_OP_EQ: printf("cset %s, eq\n", r1); break;
+                            case BINARY_OP_GE: printf("cset %s, ge\n", r1); break;
+                            case BINARY_OP_LE: printf("cset %s, le\n", r1); break;
+                            case BINARY_OP_NE: printf("cset %s, ne\n", r1); break;
+                            case BINARY_OP_GT: printf("cset %s, gt\n", r1); break;
+                            case BINARY_OP_LT: printf("cset %s, lt\n", r1); break;
+                            default: break;
+                        }
                     default: break;
                 }
             } else if (expr_kind(expr_node) == UNARY_OPERATION) {
@@ -133,7 +132,7 @@ char *gen_expr(AST_NODE *expr_node)
                 printf("__CONST_%d: .float %f\n", g_const_cnt, const_fval(expr_node));
                 printf(".text\n");
                 printf("ldr %s, =_CONST_%d\n", r1, g_const_cnt++);
-            } else if (const_type(expr_node) == STRINGC) { 
+            } else if (const_type(expr_node) == STRINGC) {
                 r1 = get_addr_reg();
                 printf(".data\n");
                 printf("__CONST_%d: .ascii %s\n", g_const_cnt, const_sval(expr_node));
@@ -170,13 +169,12 @@ void gen_stmt(AST_NODE *stmt_node) {
         case FUNCTION_CALL_STMT:
             gen_func_call(stmt_node);
             break;
-        defualt:
+defualt:
             break;
     }
 
 }
-void gen_return(AST_NODE *stmt_node)
-{
+void gen_return(AST_NODE *stmt_node) {
     AST_NODE *expr_node = stmt_node->child;
     char *reg = gen_expr(expr_node);
     if (data_type(stmt_node) == INT_TYPE) {
@@ -212,14 +210,21 @@ void gen_while(AST_NODE *stmt_node) {
     printf("%s:\n", exit_label);
 }
 
-void gen_assign(AST_NODE *stmt_node) {  /*TODO*/
+void gen_assign(AST_NODE *stmt_node) {
     AST_NODE *lhs = stmt_node->child;
-    AST_NODE *rhs = lhs->rightSibling;
+    char *rhs = gen_expr(lhs->rightSibling);
 
     if (id_kind(lhs) == NORMAL_ID) {
-
-    } else {
-
+        if (id_sym(lhs)->nestingLevel == 0) {
+            char *lhs_id = id_sym(lhs)->name;
+            char *lhs_reg = get_addr_reg();
+            printf("ldr %s, =%s\n", lhs_reg, lhs_id);
+            printf("str %s, [%s, #0]\n", rhs, lhs_reg);
+        } else {
+            printf("str %s, [x29, #%d]\n", rhs, id_sym(lhs)->offset);
+        }
+    } else if (id_kind(lhs) == ARRAY_ID) {
+        /* TODO: array assignment*/
     }
 }
 
@@ -253,7 +258,9 @@ void gen_if(AST_NODE *stmt_node) {
         printf("%s:\n", else_label);
         gen_block(else_node);
         printf("%s:\n", exit_label);
-    } else {} /* if then else if*/
+    } else {
+        /* TODO: if then else if*/
+    }
 }
 
 void gen_func_call(AST_NODE *stmt_node) {
@@ -308,7 +315,7 @@ void gen_global_var(AST_NODE *decl_list_node) {
                         /* TODO: global array */
                         break;
                     case WITH_INIT_ID:
-                        value = const_type(id_node->child) == FLOATC ? const_fval(id_node->child) : const_ival(id_node->child); 
+                        value = const_type(id_node->child) == FLOATC ? const_fval(id_node->child) : const_ival(id_node->child);
                         if (data_type(type_node) == INT_TYPE) {
                             printf("_g_%s: .word %d\n", id_name(id_node), (int)value);
                         } else {
