@@ -7,21 +7,26 @@ int block_offset(AST_NODE *block_node, int offset)
 {
     if (block_node->child == NULL || block_node->child->nodeType != VARIABLE_DECL_LIST_NODE) return offset;
 
-    AST_NODE *id_node = block_node->child->child->child->rightSibling;
-    while (id_node != NULL) {
-        SymbolTableEntry *ste = id_node->semantic_value.identifierSemanticValue.symbolTableEntry;
-        if (ste->attribute->attr.typeDescriptor->kind == ARRAY_TYPE_DESCRIPTOR) {
-            ArrayProperties properties = ste->attribute->attr.typeDescriptor->properties.arrayProperties;
-            int array_size = 1;
-            for (int i = 0; i < properties.dimension; i++) {
-                array_size *= properties.sizeInEachDimension[i];
+    AST_NODE *decl_node = block_node->child->child;
+    while (decl_node != NULL) {
+        AST_NODE *id_node = decl_node->child->rightSibling;
+        while (id_node != NULL) {
+            SymbolTableEntry *ste = id_node->semantic_value.identifierSemanticValue.symbolTableEntry;
+            if (ste->attribute->attr.typeDescriptor->kind == ARRAY_TYPE_DESCRIPTOR) {
+                ArrayProperties properties = ste->attribute->attr.typeDescriptor->properties.arrayProperties;
+                int array_size = 1;
+                for (int i = 0; i < properties.dimension; i++) {
+                    array_size *= properties.sizeInEachDimension[i];
+                }
+                offset -= array_size * 4;
+            } else {
+                offset -= 4;
             }
-            offset -= array_size * 4;
-        } else {
-            offset -= 4;
+            //printf("%s:%d\n", id_node->semantic_value.identifierSemanticValue.identifierName, offset);
+            ste->offset = offset;
+            id_node = id_node->rightSibling;
         }
-        ste->offset = offset;
-        id_node = id_node->rightSibling;
+        decl_node = decl_node->rightSibling;
     }
     return offset;
 }

@@ -43,7 +43,7 @@ void codegen(AST_NODE *program) {
 
 
 char *gen_expr(AST_NODE *expr_node) {
-    char *r1, *r2, *r3, *type;
+    char *r1, *r2, *type;
     switch (node_type(expr_node)) {
         case EXPR_NODE:
             if (expr_const_eval(expr_node)) {
@@ -59,25 +59,21 @@ char *gen_expr(AST_NODE *expr_node) {
                     fprintf(fp, "ldr %s, =_CONST_%d\n", r1, g_const_cnt++);
                 }
             } else if (expr_kind(expr_node) == BINARY_OPERATION) {
-                if (data_type(expr_node) == INT_TYPE) {
-                    r1 = get_int_reg();
-                    type = "";
-                } else if (data_type(expr_node) == FLOAT_TYPE) {
-                    r1 = get_float_reg();
-                    type = "f";
-                }
-                r2 = gen_expr(expr_node->child);
-                r3 = gen_expr(expr_node->child->rightSibling);
+                type = data_type(expr_node) == INT_TYPE ? "" : "f";
+                r1 = gen_expr(expr_node->child);
+                r2 = gen_expr(expr_node->child->rightSibling);
                 switch (expr_bin_op(expr_node)) {
-                    case BINARY_OP_ADD: fprintf(fp, "%sadd %s, %s, %s\n", type, r1, r2, r3); break;
-                    case BINARY_OP_SUB: fprintf(fp, "%ssub %s, %s, %s\n", type, r1, r2, r3); break;
-                    case BINARY_OP_MUL: fprintf(fp, "%smul %s, %s, %s\n", type, r1, r2, r3); break;
-                    case BINARY_OP_DIV: fprintf(fp, "%sdiv %s, %s, %s\n", type[0] == 'f' ? "f" : "s", r1, r2, r3); break;
-                    case BINARY_OP_AND: fprintf(fp, "%sand %s, %s, %s\n", type, r1, r2, r3); break;
-                    case BINARY_OP_OR: fprintf(fp, "%sorr %s, %s, %s\n", type, r1, r2, r3); break;
+                    case BINARY_OP_ADD: fprintf(fp, "%sadd %s, %s, %s\n", type, r1, r1, r2); break;
+                    case BINARY_OP_SUB: fprintf(fp, "%ssub %s, %s, %s\n", type, r1, r1, r2); break;
+                    case BINARY_OP_MUL: fprintf(fp, "%smul %s, %s, %s\n", type, r1, r1, r2); break;
+                    case BINARY_OP_DIV: fprintf(fp, "%sdiv %s, %s, %s\n", type[0] == 'f' ? "f" : "s", r1, r1, r2); break;
+                    case BINARY_OP_AND: fprintf(fp, "%sand %s, %s, %s\n", type, r1, r1, r2); break;
+                    case BINARY_OP_OR: fprintf(fp, "%sorr %s, %s, %s\n", type, r1, r1, r2); break;
                     case BINARY_OP_EQ: case BINARY_OP_GE: case BINARY_OP_LE:
                     case BINARY_OP_NE: case BINARY_OP_GT: case BINARY_OP_LT:
-                        fprintf(fp, "%scmp %s, %s\n", type, r2, r3);
+                        fprintf(fp, "%scmp %s, %s\n", type, r1, r2);
+                        r1 = get_int_reg();
+                        data_type(expr_node) = INT_TYPE;
                         switch (expr_bin_op(expr_node)) {
                             case BINARY_OP_EQ: fprintf(fp, "cset %s, eq\n", r1); break;
                             case BINARY_OP_GE: fprintf(fp, "cset %s, ge\n", r1); break;
@@ -111,7 +107,7 @@ char *gen_expr(AST_NODE *expr_node) {
             break;
 
         case IDENTIFIER_NODE:
-            r1 = get_int_reg();
+            r1 = data_type(expr_node) == INT_TYPE ? get_int_reg() : get_float_reg();
             if (id_sym(expr_node)->nestingLevel == 0) {
                 r2 = get_addr_reg();
                 fprintf(fp, "ldr %s, =_g_%s\n", r2, id_name(expr_node));
@@ -127,15 +123,19 @@ char *gen_expr(AST_NODE *expr_node) {
                 fprintf(fp, "mov %s, #%d\n", r1, const_ival(expr_node));
             } else if (const_type(expr_node) == FLOATC) {
                 r1 = get_float_reg();
+                r2 = get_addr_reg();
                 fprintf(fp, ".data\n");
                 fprintf(fp, "_CONST_%d: .float %f\n", g_const_cnt, const_fval(expr_node));
                 fprintf(fp, ".align 3\n");
                 fprintf(fp, ".text\n");
-                fprintf(fp, "ldr %s, =_CONST_%d\n", r1, g_const_cnt++);
+                fprintf(fp, "ldr %s, =_CONST_%d\n", r2, g_const_cnt++);
+                fprintf(fp, "ldr %s, [%s]\n", r1, r2);
             } else if (const_type(expr_node) == STRINGC) {
                 r1 = get_addr_reg();
+                char str[256] = {0};
+                memcpy(str, const_sval(expr_node) + 1, strlen(const_sval(expr_node)) - 2);
                 fprintf(fp, ".data\n");
-                fprintf(fp, "_CONST_%d: .ascii %s\n", g_const_cnt, const_sval(expr_node));
+                fprintf(fp, "_CONST_%d: .ascii \"%s\\000\"\n", g_const_cnt, str);
                 fprintf(fp, ".align 3\n");
                 fprintf(fp, ".text\n");
                 fprintf(fp, "ldr %s, =_CONST_%d\n", r1, g_const_cnt++);
@@ -259,8 +259,6 @@ void gen_if(AST_NODE *stmt_node) {
         fprintf(fp, "%s:\n", else_label);
         gen_block(else_node);
         fprintf(fp, "%s:\n", exit_label);
-    } else {
-        /* TODO: if then else if*/
     }
 }
 
