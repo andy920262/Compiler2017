@@ -20,6 +20,7 @@
 #define const_type(node) node->semantic_value.const1->const_type
 #define expr_bin_op(node) node->semantic_value.exprSemanticValue.op.binaryOp
 #define expr_uni_op(node) node->semantic_value.exprSemanticValue.op.unaryOp
+#define expr_eval(node) node->semantic_value.exprSemanticValue.constEvalValue
 
 
 #define get_int_reg() int_reg[(g_addr_reg_cnt++) % 7]

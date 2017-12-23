@@ -46,18 +46,9 @@ char *gen_expr(AST_NODE *expr_node) {
     char *r1, *r2, *type;
     switch (node_type(expr_node)) {
         case EXPR_NODE:
-            if (expr_const_eval(expr_node)) {
-                if (data_type(expr_node) == INT_TYPE) {
-                    r1 = get_int_reg();
-                    fprintf(fp, "mov %s #%d\n", r1, const_ival(expr_node));
-                } else if (data_type(expr_node) == FLOAT_TYPE) {
-                    r1 = get_float_reg();
-                    fprintf(fp, ".data\n");
-                    fprintf(fp, "_CONST_%d: .float %f\n", g_const_cnt, const_fval(expr_node));
-                    fprintf(fp, ".align 3\n");
-                    fprintf(fp, ".text\n");
-                    fprintf(fp, "ldr %s, =_CONST_%d\n", r1, g_const_cnt++);
-                }
+            if (expr_const_eval(expr_node) && data_type(expr_node) == INT_TYPE) {
+                r1 = get_int_reg();
+                fprintf(fp, "mov %s, #%d\n", r1, expr_eval(expr_node).iValue);
             } else if (expr_kind(expr_node) == BINARY_OPERATION) {
                 type = data_type(expr_node) == INT_TYPE ? "" : "f";
                 r1 = gen_expr(expr_node->child);
