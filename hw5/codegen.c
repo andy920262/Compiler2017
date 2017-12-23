@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 FILE fp;
+int while_count = 0;
 
 void codegen(AST_NODE *program) {
     AST_NODE *child = program->child;
@@ -18,8 +19,7 @@ void codegen(AST_NODE *program) {
 }
 
 
-REG gen_expr(AST_NODE *expr_node)
-{
+REG gen_expr(AST_NODE *expr_node) {
     REG r1, r2, r3;
     if (data_type(expr_node) == INT_TYPE) {
         r1 = w9, r2 = w10, r3 = w11;
@@ -40,11 +40,10 @@ REG gen_expr(AST_NODE *expr_node)
         default:
             break;
     }
-            
+
 }
 
-void gen_stmt(AST_NODE *stmt_node)
-{
+void gen_stmt(AST_NODE *stmt_node) {
     if (node_type(stmt_node) == BLOCK_NODE) {
         gen_block(stmt_node);
         return;
@@ -63,35 +62,49 @@ void gen_stmt(AST_NODE *stmt_node)
             gen_assign(stmt_node);
             break;
         case RETURN_STMT:
-            
+
             break;
         case FUNCTION_CALL_STMT:
             gen_func_call(stmt_node);
             break;
-        defualt:
+defualt:
             break;
     }
 
 }
 
-void gen_while(AST_NODE* stmt_node)
-{
+void gen_while(AST_NODE* stmt_node) {
+    while_count++;
+    REG test_r;
+    AST_NODE* block_node = stmt_node->child->rightSibling;
+    char test_label[15];
+    char exit_label[15];
+    sprintf(test_label, "_while_test%d", while_count);
+    sprintf(exit_label, "_while_exit%d", while_count);
+
+    printf("%s:\n", test_label);
+    test_r = gen_expr(stmt_node->child);
+    if (test_r < 7) {
+        printf("cmp w%d, #0\n", test_r);
+    } else {
+        printf("fcmp s%d, #0\n", test_r);
+    }
+    printf("beq %s\n", exit_label);
+    gen_block(block_node);
+    printf("b %s\n", test_label);
+    printf("%s:\n", exit_label);
 }
 
-void gen_assign(AST_NODE* stmt_node)
-{
+void gen_assign(AST_NODE* stmt_node) {
 }
 
-void gen_if(AST_NODE* stmt_node)
-{
+void gen_if(AST_NODE* stmt_node) {
 }
 
-void gen_func_call(AST_NODE *stmt_node)
-{
+void gen_func_call(AST_NODE *stmt_node) {
 }
 
-void gen_global_var(AST_NODE *decl_list_node)
-{
+void gen_global_var(AST_NODE *decl_list_node) {
     printf(".data\n");
     AST_NODE *decl_node = decl_list_node->child;
     while (decl_node != NULL) {
@@ -112,7 +125,7 @@ void gen_global_var(AST_NODE *decl_list_node)
                         /* TODO: global array */
                         break;
                     case WITH_INIT_ID:
-                        value = const_type(id_node->child) == FLOATC ? id_ival(id_node) : id_fval(id_node); 
+                        value = const_type(id_node->child) == FLOATC ? id_ival(id_node) : id_fval(id_node);
                         if (data_type(type_node) == INT_TYPE) {
                             printf("_g_%s: .word %d\n", id_name(id_node), (int)value);
                         } else {
@@ -168,7 +181,7 @@ void gen_func_decl(AST_NODE *decl_node) {
 
 
     gen_block(block_node);
-    
+
     /* Gen callee restore */
     printf("ldr x9, [sp, #8]\n");
     printf("ldr x10, [sp, #16]\n");
@@ -197,12 +210,11 @@ void gen_func_decl(AST_NODE *decl_node) {
 
 }
 
-void gen_decl(AST_NODE *decl_node)
-{
+void gen_decl(AST_NODE *decl_node) {
     AST_NODE *id_node = decl_node->child->rightSibling;
     while (id_node != NULL) {
         if (id_kind(id_node) == WITH_INIT_ID) {
-            /*  TODO: simple constant initialization */ 
+            /*  TODO: simple constant initialization */
         }
         id_node = id_node->rightSibling;
     }
