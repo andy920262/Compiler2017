@@ -33,6 +33,7 @@ void gen_func_decl(AST_NODE *decl_node);
 void gen_block(AST_NODE *block_node);
 void gen_decl(AST_NODE *decl_node);
 void gen_stmt(AST_NODE *stmt_node);
+void gen_return(AST_NODE *stmt_node);
 void gen_while(AST_NODE *stmt_node);
 void gen_assign(AST_NODE *stmt_node);
 void gen_if(AST_NODE *stmt_node);

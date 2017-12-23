@@ -40,7 +40,6 @@ void param_offset(AST_NODE *param_list_node, int offset)
 int calc_offset(AST_NODE *node, int offset)
 {
     AST_NODE *child = node->child;
-    
     if (node->nodeType == DECLARATION_NODE && node->semantic_value.declSemanticValue.kind == FUNCTION_DECL) {
         offset = 0;
     } else if (node->nodeType == BLOCK_NODE) {
