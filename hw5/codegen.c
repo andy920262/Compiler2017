@@ -82,7 +82,7 @@ char *gen_expr(AST_NODE *expr_node) {
                 switch (expr_uni_op(expr_node)) {
                     case UNARY_OP_POSITIVE: break;
                     case UNARY_OP_NEGATIVE: fprintf(fp, "%sneg %s, %s\n", type, r1, r1); break;
-                    case UNARY_OP_LOGICAL_NEGATION: fprintf(fp, "ands %s, #0\n", r1); break;
+                    case UNARY_OP_LOGICAL_NEGATION: fprintf(fp, "and %s, #0\n", r1); break;
                     default: ;
                 }
             }
@@ -98,13 +98,19 @@ char *gen_expr(AST_NODE *expr_node) {
             break;
 
         case IDENTIFIER_NODE:
-            r1 = data_type(expr_node) == INT_TYPE ? get_int_reg() : get_float_reg();
-            if (id_sym(expr_node)->nestingLevel == 0) {
-                r2 = get_addr_reg();
-                fprintf(fp, "ldr %s, =_g_%s\n", r2, id_name(expr_node));
+            if (id_kind(expr_node) == ARRAY_ID) {
+                r2 = gen_array_addr(expr_node);
+                r1 = data_type(expr_node) == INT_TYPE ? get_int_reg() : get_float_reg();
                 fprintf(fp, "ldr %s, [%s, #0]\n", r1, r2);
             } else {
-                fprintf(fp, "ldr %s, [x29, #%d]\n", r1, id_sym(expr_node)->offset);
+                r1 = data_type(expr_node) == INT_TYPE ? get_int_reg() : get_float_reg();
+                if (id_sym(expr_node)->nestingLevel == 0) {
+                    r2 = get_addr_reg();
+                    fprintf(fp, "ldr %s, =_g_%s\n", r2, id_name(expr_node));
+                    fprintf(fp, "ldr %s, [%s, #0]\n", r1, r2);
+                } else {
+                    fprintf(fp, "ldr %s, [x29, #%d]\n", r1, id_sym(expr_node)->offset);
+                }
             }
             break;
 
@@ -161,12 +167,40 @@ void gen_stmt(AST_NODE *stmt_node) {
         case FUNCTION_CALL_STMT:
             gen_func_call(stmt_node);
             break;
-defualt:
+        defualt:
             break;
     }
 
 }
-void gen_return(AST_NODE *stmt_node) {
+
+char *gen_array_addr(AST_NODE *id_node)
+{
+    ArrayProperties array_prop = sym_typedesc(id_sym(id_node))->properties.arrayProperties;
+    AST_NODE *dim_node = id_node->child;
+    char *offset_reg = get_int_reg();
+    char *mul_reg = get_int_reg();
+    fprintf(fp, "mov %s, #0\n", offset_reg);
+    for (int dim = 0; dim < array_prop.dimension; dim++, dim_node = dim_node->rightSibling) {
+        char *expr_reg = gen_expr(dim_node);
+        int array_size = (dim == array_prop.dimension - 1) ? 4 : array_prop.sizeInEachDimension[dim];
+        fprintf(fp, "add %s, %s, %s\n", offset_reg, offset_reg, expr_reg);
+        fprintf(fp, "mov %s, #%d\n", mul_reg, array_size);
+        fprintf(fp, "mul %s, %s, %s\n", offset_reg, offset_reg, mul_reg);
+    }
+    //fprintf(fp, "mov w0, %s\n", offset_reg);
+    //fprintf(fp, "bl _write_int\n");
+    char *reg = get_addr_reg();
+    if (id_sym(id_node)->nestingLevel == 0) {
+        fprintf(fp, "ldr %s, =_g_%s\n", reg, id_name(id_node));
+    } else {
+        fprintf(fp, "add %s, X29, #%d\n", reg, id_sym(id_node)->offset);
+    }
+    fprintf(fp, "add %s, %s, %s, SXTW\n", reg, reg, offset_reg);
+    return reg;
+}
+
+void gen_return(AST_NODE *stmt_node)
+{
     AST_NODE *expr_node = stmt_node->child;
     char *reg = gen_expr(expr_node);
     if (data_type(stmt_node) == INT_TYPE) {
@@ -204,19 +238,20 @@ void gen_while(AST_NODE *stmt_node) {
 
 void gen_assign(AST_NODE *stmt_node) {
     AST_NODE *lhs = stmt_node->child;
-    char *rhs = gen_expr(lhs->rightSibling);
+    char *rhs_reg = gen_expr(lhs->rightSibling);
+    char *lhs_reg;
 
     if (id_kind(lhs) == NORMAL_ID) {
         if (id_sym(lhs)->nestingLevel == 0) {
-            char *lhs_id = id_sym(lhs)->name;
-            char *lhs_reg = get_addr_reg();
-            fprintf(fp, "ldr %s, =_g_%s\n", lhs_reg, lhs_id);
-            fprintf(fp, "str %s, [%s, #0]\n", rhs, lhs_reg);
+            lhs_reg = get_addr_reg();
+            fprintf(fp, "ldr %s, =_g_%s\n", lhs_reg, id_name(lhs));
+            fprintf(fp, "str %s, [%s, #0]\n", rhs_reg, lhs_reg);
         } else {
-            fprintf(fp, "str %s, [x29, #%d]\n", rhs, id_sym(lhs)->offset);
+            fprintf(fp, "str %s, [x29, #%d]\n", rhs_reg, id_sym(lhs)->offset);
         }
-    } else if (id_kind(lhs) == ARRAY_ID) {
-        /* TODO: array assignment*/
+    } else {
+        lhs_reg = gen_array_addr(lhs);
+        fprintf(fp, "str %s, [%s, #0]\n", rhs_reg, lhs_reg);
     }
 }
 
@@ -291,29 +326,26 @@ void gen_global_var(AST_NODE *decl_list_node) {
         if (decl_kind(decl_node) == VARIABLE_DECL) {
             AST_NODE *type_node = decl_node->child;
             AST_NODE *id_node = type_node->rightSibling;
-            float value;
+            float value = 0;
             while (id_node != NULL) {
-                switch (id_kind(id_node)) {
-                    case NORMAL_ID:
-                        if (data_type(type_node) == INT_TYPE) {
-                            fprintf(fp, "_g_%s: .word 0\n", id_name(id_node));
-                        } else {
-                            fprintf(fp, "_g_%s: .float 0.0\n", id_name(id_node));
-                        }
-                        break;
-                    case ARRAY_ID:
-                        /* TODO: global array */
-                        break;
-                    case WITH_INIT_ID:
-                        value = const_type(id_node->child) == FLOATC ? const_fval(id_node->child) : const_ival(id_node->child);
-                        if (data_type(type_node) == INT_TYPE) {
-                            fprintf(fp, "_g_%s: .word %d\n", id_name(id_node), (int)value);
-                        } else {
-                            fprintf(fp, "_g_%s: .float %f\n", id_name(id_node), value);
-                        }
-                        break;
-                    default:
-                        break;
+                SymbolTableEntry *sym = id_sym(id_node);
+                TypeDescriptor *type_desc = sym_typedesc(sym);
+                if (id_kind(id_node) == WITH_INIT_ID) {
+                    value = const_type(id_node->child) == FLOATC ? const_fval(id_node->child) : const_ival(id_node->child);
+                }
+                if (type_desc->kind == SCALAR_TYPE_DESCRIPTOR) {
+                    if (data_type(type_node) == INT_TYPE) {
+                        fprintf(fp, "_g_%s: .word %d\n", id_name(id_node), (int)value);
+                    } else {
+                        fprintf(fp, "_g_%s: .float %f\n", id_name(id_node), value);
+                    }
+                } else if (type_desc->kind == ARRAY_TYPE_DESCRIPTOR) {
+                    int array_size = 4;
+                    ArrayProperties array_prop = type_desc->properties.arrayProperties;
+                    for (int i = 0; i < array_prop.dimension; i++) {
+                        array_size *= array_prop.sizeInEachDimension[i];
+                    }
+                    fprintf(fp, "_g_%s: .space %d\n", id_name(id_node), array_size);
                 }
                 id_node = id_node->rightSibling;
             }
@@ -395,7 +427,7 @@ void gen_decl(AST_NODE *decl_node) {
     AST_NODE *id_node = decl_node->child->rightSibling;
     while (id_node != NULL) {
         if (id_kind(id_node) == WITH_INIT_ID) {
-            fprintf(fp, "str %s, [sp, %d]\n", gen_expr(id_node->child), id_sym(id_node)->offset);
+            fprintf(fp, "str %s, [X29, %d]\n", gen_expr(id_node->child), id_sym(id_node)->offset);
         }
         id_node = id_node->rightSibling;
     }

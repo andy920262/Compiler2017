@@ -29,6 +29,7 @@
 
 
 void codegen(AST_NODE *program);
+char *gen_array_addr(AST_NODE *id_node);
 void gen_global_var(AST_NODE *decl_list_node);
 void gen_func_decl(AST_NODE *decl_node);
 void gen_block(AST_NODE *block_node);
