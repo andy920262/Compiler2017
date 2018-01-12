@@ -1,6 +1,6 @@
 TARGET = parser
 OBJECT = parser.tab.h parser.tab.c parser.tab.o lex.yy.c alloc.o functions.o codeGeneration.o semanticAnalysis.o printSourceFile.o myRegister.o offsetInAR.o symbolTable.o myIntVector.o
-CC = gcc -g
+CC = gcc -g -std=c99
 LEX = flex
 YACC = bison -v
 YACCFLAG = -d

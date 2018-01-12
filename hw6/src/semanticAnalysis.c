@@ -1436,6 +1436,7 @@ void declareFunction(AST_NODE* declarationNode)
     AST_NODE *parameterListNode = functionNameID->rightSibling;
     AST_NODE *traverseParameter = parameterListNode->child;
     int parametersCount = 0;
+    int offsetOfParameter = 16;
     if(traverseParameter)
     {
         ++parametersCount;
@@ -1452,6 +1453,8 @@ void declareFunction(AST_NODE* declarationNode)
             parameter->parameterName = parameterID->semantic_value.identifierSemanticValue.identifierName;
             parameter->type = parameterID->semantic_value.identifierSemanticValue.symbolTableEntry->attribute->attr.typeDescriptor;
             attribute->attr.functionSignature->parameterList = parameter;
+			parameterID->semantic_value.identifierSemanticValue.symbolTableEntry->attribute->offsetInAR = offsetOfParameter;
+			offsetOfParameter += 8;
         }
         traverseParameter = traverseParameter->rightSibling;
     }
@@ -1475,6 +1478,8 @@ void declareFunction(AST_NODE* declarationNode)
             parameter->type = parameterID->semantic_value.identifierSemanticValue.symbolTableEntry->attribute->attr.typeDescriptor;
             parameterListTail->next = parameter;
             parameterListTail = parameter;
+			parameterID->semantic_value.identifierSemanticValue.symbolTableEntry->attribute->offsetInAR = offsetOfParameter;
+			offsetOfParameter += 8;
         }
         traverseParameter = traverseParameter->rightSibling;
     }
