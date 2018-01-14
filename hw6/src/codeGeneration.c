@@ -1369,14 +1369,11 @@ void codeGenIfStmt(AST_NODE* ifStmtNode)
 	}
 	else if(boolExpression->dataType == FLOAT_TYPE)
 	{
-		fprintf(g_codeGenOutputFp, "ldr %s, _CONSTANT_%d\n", floatWorkRegisterName[0], constantZeroLabelNumber);
 		char* boolRegName = NULL;
 		codeGenPrepareRegister(FLOAT_REG, boolExpression->registerIndex, 1, 1, &boolRegName);
-		fprintf(g_codeGenOutputFp, "vcmp.f32 %s, %s\n", boolRegName, floatWorkRegisterName[0]);
-		fprintf(g_codeGenOutputFp, "vmrs  APSR_nzcv, FPSCR\n");
-		fprintf(g_codeGenOutputFp, "beq _whileExitLabel_%d\n", labelNumber);
+		fprintf(g_codeGenOutputFp, "fcmp %s, #0.0\n", boolRegName);
+		fprintf(g_codeGenOutputFp, "beq _elseLabel_%d\n", labelNumber);
 		freeRegister(FLOAT_REG, boolExpression->registerIndex);
-		codeGenPrepareRegister(FLOAT_REG, boolExpression->registerIndex, 1, 1, &boolRegName);
 	}
 
 	AST_NODE* ifBodyNode = boolExpression->rightSibling;
