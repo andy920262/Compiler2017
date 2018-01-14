@@ -891,8 +891,8 @@ void codeGenFunctionCall(AST_NODE* functionCallNode)
 			int paramOffset = 0;
 			while(traverseParameter) {
 				paramOffset += 8;
-                traverseParameter = traverseParameter->rightSibling;
-            }
+				traverseParameter = traverseParameter->rightSibling;
+			}
 			if (paramOffset > 0) {
 				fprintf(g_codeGenOutputFp, "add sp, sp, %d\n", paramOffset);
 			}
@@ -1322,7 +1322,7 @@ void codeGenForStmt(AST_NODE* forStmtNode)
 
 	AST_NODE *testNode = initNode->rightSibling;
 	int labelNumber = getLabelNumber();
-    fprintf(g_codeGenOutputFp, "_forTestLabel_%d:\n", labelNumber);
+	fprintf(g_codeGenOutputFp, "_forTestLabel_%d:\n", labelNumber);
 	codeGenGeneralNode(testNode);
 	char* boolRegName = NULL;
 	codeGenPrepareRegister(INT_REG, testNode->registerIndex, 1, 0, &boolRegName);
@@ -1332,15 +1332,15 @@ void codeGenForStmt(AST_NODE* forStmtNode)
 	
 	AST_NODE *incNode = testNode->rightSibling;
 	fprintf(g_codeGenOutputFp, "b _forBodyLabel_%d\n", labelNumber);
-    fprintf(g_codeGenOutputFp, "_forIncLabel_%d:\n", labelNumber);
+	fprintf(g_codeGenOutputFp, "_forIncLabel_%d:\n", labelNumber);
 	codeGenGeneralNode(incNode);
 	fprintf(g_codeGenOutputFp, "b _forTestLabel_%d\n", labelNumber);
-    fprintf(g_codeGenOutputFp, "_forBodyLabel_%d:\n", labelNumber);
+	fprintf(g_codeGenOutputFp, "_forBodyLabel_%d:\n", labelNumber);
 
 	AST_NODE *bodyNode = incNode->rightSibling;
-    codeGenStmtNode(bodyNode);
-    fprintf(g_codeGenOutputFp, "b _forIncLabel_%d\n", labelNumber);
-    fprintf(g_codeGenOutputFp, "_forExitLabel_%d:\n", labelNumber);
+	codeGenStmtNode(bodyNode);
+	fprintf(g_codeGenOutputFp, "b _forIncLabel_%d\n", labelNumber);
+	fprintf(g_codeGenOutputFp, "_forExitLabel_%d:\n", labelNumber);
 }
 
 
@@ -1393,14 +1393,14 @@ void codeGenReturnStmt(AST_NODE* returnStmtNode)
 	if(returnVal->nodeType != NUL_NODE)
 	{
 		codeGenExprRelatedNode(returnVal);
-        if(returnStmtNode->dataType == FLOAT_TYPE && returnVal->dataType == INT_TYPE)
-        {
-            returnVal->registerIndex = codeGenConvertFromIntToFloat(returnVal->registerIndex);
-        }
-        else if(returnStmtNode->dataType == INT_TYPE && returnVal->dataType == FLOAT_TYPE)
-        {
-            returnVal->registerIndex = codeGenConvertFromFloatToInt(returnVal->registerIndex);
-        }
+		if(returnStmtNode->dataType == FLOAT_TYPE && returnVal->dataType == INT_TYPE)
+		{
+			returnVal->registerIndex = codeGenConvertFromIntToFloat(returnVal->registerIndex);
+		}
+		else if(returnStmtNode->dataType == INT_TYPE && returnVal->dataType == FLOAT_TYPE)
+		{
+			returnVal->registerIndex = codeGenConvertFromFloatToInt(returnVal->registerIndex);
+		}
 
 		char* returnValRegName = NULL;
 		if (returnVal->dataType == INT_TYPE)
